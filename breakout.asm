@@ -1,15 +1,17 @@
-
 .data
 
-bar: .word 0x10040FB8
 MMIO: .word 0xffff0000
-t: .space 4
-incremento: .space 4
-vidas: .space 4
-bloques: .space 4
+bar: .word 0x10040FB8
+posicionBarra: .word 0x00000000
+T: .word 0x00000000
+INCREMENTO: .word 0x00000000
+vidas: .word 0x00000003
+bloques: .word 0x00000000
+
+tecla: .space 2
 
 .text
-	
+
 main:
 
 # habilitamos la entrada por teclado
@@ -20,17 +22,16 @@ sw $t4,0($t3)
 
 #Realizo la invocacion de la rutina que llena el contenido
 #grafico de las condiciones iniciales del juego en pantalla
-
-	
-	
 jal init
 #Habilito interrupciones en el coprocesador
-#mfc0 $t8, $12
-#andi $t8, 0x00000801
-#mtc0 $t8, $12
-#lw $t8, 0xFFFF0000
+mfc0 $t8, $12
+andi $t8, 0xFFFF00FF
+ori $t8, 0x00000800
+ori $t8, 0X00000001
+mtc0 $t8, $12
 #Habilita interrupciones en el dispositivo
-#andi $t8, 0x00000002
+li $t8, 0x00000002
+sw $t8, 0XFFFF0000
 #Contador de vidas restantes y de bloques existentes y parametros de velocidad
 li $t0, 3
 la $t1, vidas
@@ -39,10 +40,10 @@ li $t0, 128
 la $t1, bloques
 sw $t0, ($t1)
 li $t0, 10
-la $t1, t
+la $t1, T
 sw $t0, ($t1)
 li $t0, 100
-la $t1, incremento
+la $t1, INCREMENTO
 sw $t0, ($t1)
 #Inicializar Vx=$t0 y Vy=$t1 para la pelota
 restart: 
@@ -92,11 +93,11 @@ li $t8, 0
 #Rutina de pausa en la ejecucion para que el movimiento
 #en pantalla pueda percibirse
 continue: li $v0, 32 #sleep
-li $a0, 80 #20ms
+li $a0, 250 #20ms
 syscall #do the sleep
 #Aplicar reglas del movimiento de la pelota
 #Por si esta chocando con los costados del monitor
-#el techo del mismo, un bloque o la o
+#el techo del mismo, un bloque o la barra
 #1a Condicion: Choca con los costados de la pantalla
 bnez $t8, label1
 and $t3, $t2, 0x000000FF
@@ -199,10 +200,11 @@ sw $t3, ($t2)
 lw $a0, vidas
 addi $a0, $a0, -1
 sw $a0, vidas
-#Falta Mostrar mensaje de derrota
+jal mostrarDerrota
 #Si ha vidas restantes reanuda el juego
 bnez $a0, restart
 #Game Over
+jal gameOver
 salir: li $v0, 10
 syscall
 
@@ -235,6 +237,7 @@ bnez $s1, loop
 #pantalla (en las direcciones de memoria)
 #para colocar los tonos de azul de la barra
 addi $s0, $s0, 3512
+sw $s0, posicionBarra
 li $s3, 0x000000FF
 sw $s3, ($s0)
 addi $s0, $s0, 4
@@ -259,9 +262,9 @@ move $fp, $sp
 addi $sp, $sp, -4
 #Aumenta el valor de INCREMENTO en la velocidad
 #de la pelota
-lw $a0, incremento
+lw $a0, T
 addi $a0, $a0, 1
-sw $a0, incremento
+sw $a0, T
 #Descuenta el bloque desaparecido
 lw $a0, bloques
 addi $a0, $a0, -1
@@ -270,5 +273,292 @@ sw $a0, bloques
 bnez $a0, return 
 #Falta Mostrar mensaje de victoria
 return: move $sp, $fp		
+lw $fp, ($sp)			
+jr $ra
+
+mostrarDerrota:
+sw $fp, ($sp)
+sw $a0, -4($sp)		 
+move $fp, $sp			
+addi $sp, $sp, -8
+la $a0, 0X100405E0
+li $v0, 0X00FFFF00
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 16
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 136
+sw $v0, ($a0)
+li $v0, 32 #sleep
+li $a0, 3000 #20ms
+syscall #do the sleep
+la $a0, 0X100405E0
+li $v0, 0X00000000
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 16
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 64
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 136
+sw $v0, ($a0)
+move $sp, $fp		
+lw $fp, ($sp)	
+lw $a0, -4($sp)		
+jr $ra
+
+mostrarVictoria:
+sw $fp, ($sp)			 
+move $fp, $sp			
+addi $sp, $sp, -4
+la $a0, 0X10040628
+li $v0, 0X00FF8000
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 80
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 84
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 96
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 8
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+li $v0, 10
+syscall
+move $sp, $fp		
+lw $fp, ($sp)			
+jr $ra
+
+gameOver:
+sw $fp, ($sp)			 
+move $fp, $sp			
+addi $sp, $sp, -4
+la $a0, 0X10040528
+li $v0, 0X00990099
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 16
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 92
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 24
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 96
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 24
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 92
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 16
+sw $v0, ($a0)
+addi $a0, $a0, 12
+sw $v0, ($a0)
+addi $a0, $a0, 472
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 112
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 116
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+addi $a0, $a0, 4
+sw $v0, ($a0)
+move $sp, $fp		
 lw $fp, ($sp)			
 jr $ra

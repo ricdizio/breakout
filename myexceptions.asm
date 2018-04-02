@@ -94,10 +94,10 @@ s2:	.word 0
 # Select the appropriate one for the mode in which SPIM is compiled.
 
 	# apagamos la entrada por teclado
-	lw $a0,MMIO($zero)
-	lw $a1,0($a0)
-	ori $a1,$a1,0x00000010
-	sw $a1,0($a0)
+	lw $k0,MMIO($zero)
+	lw $k1,0($k0)
+	ori $k1,$k1,0x00000010
+	sw $k1,0($k0)
 	
 	#.set noat discomment for SPIM
 	
@@ -318,10 +318,10 @@ ret:
 # Return from exception on MIPS32:
 # habilitamos la entrada por teclado
 
-	lw $a0,MMIO($zero)
-	lw $a1,0($a0)
-	ori $a1,$a1,0x00000010
-	sw $a1,0($a0)
+	lw $k0,MMIO($zero)
+	lw $k1,0($k0)
+	ori $k1,$k1,0x00000010
+	sw $k1,0($k0)
 	eret
 
 # Standard startup code.  Invoke the routine "main" with arguments:
